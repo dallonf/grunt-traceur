@@ -125,19 +125,7 @@ exports.traceur = {
     var files = fs.readdirSync(path.join(__dirname, 'tmp')).filter(function (filename) {
       return regex.test(filename);
     });
-    test.equal(files.length, 13);
-    test.done();
-  },
-
-  argsAndDestructuringInSameFile: function (test) {
-    var all = require('./tmp/all');
-    var func = all.test;
-    var result = func(undefined, 1, 2, 3);
-    test.equal(result.a, 100, 'default argument should work');
-    var restType = getType(result.rest);
-    test.equal(restType, '[object Array]', 'rest arguments should be converted to an array');
-    test.equal(all.a, 'This is A', 'destructuring assignment should work');
-    test.equal(all.b, 'This is B', 'destructuring assignment should work');
+    test.equal(files.length, 11);
     test.done();
   }
 
