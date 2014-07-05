@@ -16,8 +16,8 @@ module.exports = function(grunt) {
     // Configuration to be run (and then tested).
     traceur: {
       options: {
-        sourceMap: true
-        // traceur options here
+        sourceMaps: true,
+        recursive: true
       },
       test: {
         files: [{
@@ -26,6 +26,9 @@ module.exports = function(grunt) {
           src: ['*.js'],
           dest: 'test/tmp'
         }]
+        // files: {
+        //   'test/tmp/array.js': ['test/fixtures/array.js']
+        // }
       }
     },
     nodeunit: {

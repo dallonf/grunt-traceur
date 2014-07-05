@@ -11,9 +11,7 @@ var fs = require('fs');
 var path = require('path');
 var compiler = require('../lib/compiler');
 var Promise = require('es6-promises');
-var RUNTIME_PATH = (function () {
-  return require('traceur').RUNTIME_PATH;
-})();
+var traceur = require('traceur');
 
 function asyncCompile(content, options, callback) {
   var result;
@@ -38,32 +36,53 @@ function compileOne (grunt, compile, src, dest, options) {
     src = src[0];
     var content = grunt.file.read(src).toString('utf8');
     options.filename = src;
-    compile(content, options, function (err, result) {
-      var sourceMapName, sourceMapPath;
-      if (err) {
+    var rootSource = {
+      name: src,
+      type: options.script ? 'script' : 'module'
+    };
+    if (options.recursive) {
+      try {
+        delete options.recursive;
+        traceur.options.setFromObject(options);
+        traceur.System.baseURL = process.cwd();
+        traceur.recursiveModuleCompileToSingleFile(dest, [rootSource], options.sourceMaps);
+        grunt.log.debug('Compiled successfully to "' + dest + '"');
+        grunt.log.ok(src + ' -> ' + dest);
+        resolve();
+      } catch (err) {
         grunt.log.error(src + ' -> ' + dest);
         grunt.log.error('ERRORS:');
         grunt.log.error(err);
         reject(err);
-      } else {
-        if (options.includeRuntime) {
-          result.js = fs.readFileSync(RUNTIME_PATH) + result.js;
-        }
-        if (options.sourceMap) {
-          sourceMapName = path.basename(src) + '.map';
-          sourceMapPath = path.join(dest, '..',  sourceMapName);
-          result.js += '//# sourceMappingURL=' + sourceMapName + '\n';
-          grunt.file.write(sourceMapPath, result.sourceMap);
-          grunt.log.debug('SourceMap written to "' + sourceMapName + '"');
-        }
-        grunt.file.write(dest, result.js, {
-          encoding: 'utf8'
-        });
-        grunt.log.debug('Compiled successfully to "' + dest + '"');
-        grunt.log.ok(src + ' -> ' + dest);
-        resolve();
       }
-    });
+    } else {
+      compile(content, options, function (err, result) {
+        var sourceMapName, sourceMapPath;
+        if (err) {
+          grunt.log.error(src + ' -> ' + dest);
+          grunt.log.error('ERRORS:');
+          grunt.log.error(err);
+          reject(err);
+        } else {
+          if (options.includeRuntime) {
+            result.js = fs.readFileSync(traceur.RUNTIME_PATH) + result.js;
+          }
+          if (options.sourceMaps) {
+            sourceMapName = path.basename(src) + '.map';
+            sourceMapPath = path.join(dest, '..',  sourceMapName);
+            result.js += '//# sourceMappingURL=' + sourceMapName + '\n';
+            grunt.file.write(sourceMapPath, result.sourceMap);
+            grunt.log.debug('SourceMap written to "' + sourceMapName + '"');
+          }
+          grunt.file.write(dest, result.js, {
+            encoding: 'utf8'
+          });
+          grunt.log.debug('Compiled successfully to "' + dest + '"');
+          grunt.log.ok(src + ' -> ' + dest);
+          resolve();
+        }
+      });
+    }
   });
 }
 
