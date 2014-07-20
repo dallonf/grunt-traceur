@@ -32,6 +32,10 @@ function compileAll(grunt, compile, srcs, dest, options, callback) {
     return grunt.file.read(src).toString('utf8');
   }).join(';');
   options.filename = dest;
+  if (srcs.length === 1) { // Special case for single files
+    // Reference filenames directly so they display more nicely in devtools
+    options.filename = '/' + srcs[0];
+  }
   compile(content, options, function(err, result) {
     var sourceMapName;
     if (err) {
